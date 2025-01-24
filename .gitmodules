@@ -1,0 +1,3 @@
+[submodule "cstimer"]
+	path = cstimer
+	url = https://github.com/Alex-Beng/cstimer.git
