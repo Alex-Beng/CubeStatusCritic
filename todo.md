@@ -11,4 +11,4 @@
     - [ ] 键盘shortcut
 - [ ] 导出数据
     - [ ] 数据存储
-    - [ ] 导出界面button
+    - [x] 导出界面button，直接使用现有的导出文件button
