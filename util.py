@@ -2,8 +2,8 @@ import re
 import json
 
 # cstimer output file -> {idx -> scramble status}
-#   scramble status: (scramble, prefer, ...)
-def load_data_from_file(path, session_id) -> list[int, tuple]:
+#   scramble status: (scramble, scarmble status, prefer, ...)
+def load_data_from_file(path, session_id, scramble_type) -> list[int, tuple]:
     with open(path, 'r') as f:
         raw_data = json.load(f)
     ss_data = raw_data.get(f"session{session_id}", {})
@@ -11,13 +11,16 @@ def load_data_from_file(path, session_id) -> list[int, tuple]:
         print("[warning] not session data ")
         return
     ret_data = []
-    for dt in ss_data:
+    for did, dt in enumerate(ss_data):
         pf = False
         if len(dt) > 4 and type(dt[4][-1]) == bool:
             pf = dt[4][-1]
+        else:
+            print(f'[warning] not prefer setting in session: {session_id}-{did}')
 
         ret_data.append((
             dt[1],
+            SCRAMBLE_TYPE_TO_FUNC[scramble_type](dt[1]),
             pf
         ))
     print(len(ss_data))
@@ -107,8 +110,13 @@ def clock_scramble_to_status(scramble_str: str) -> list[int]:
     ret_status = [c%12 for c in ret_status]
     return ret_status
 
+SCRAMBLE_TYPE_TO_FUNC = {
+    "clock": clock_scramble_to_status,
+}
+
+
 if __name__ == "__main__":
-    load_data_from_file("./data/ye_clock_1.json", 1)
+    load_data_from_file("./data/ye_clock_1.json", 1, "clock")
     
     status = clock_scramble_to_status("UR3+ DR5+ DL2- UL4- U4- R2+ D4- L4+ ALL2+ y2 U2- R1- D5- L4+ ALL3+")
     print(status)
