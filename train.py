@@ -1,9 +1,12 @@
 import os
 import argparse
+import onnx.checker
 from tqdm import tqdm
 import logging
 import random
 
+import onnx
+import onnxruntime
 from IPython import embed
 import matplotlib.pyplot as plt
 import numpy as np
@@ -14,8 +17,6 @@ from models import Policy
 from util import load_data_from_file, SCRAMBLE_TYPE_TO_STATE_FUNC
 import loss
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s- %(filename)s:%(lineno)d - %(message)s')
-
 def get_config(cfg, args, key):
     if hasattr(args, key) and (attr := getattr(args, key)):
         return attr
@@ -24,12 +25,7 @@ def get_config(cfg, args, key):
     logging.warning(f'There is not setting for `{key}`')
     return None
 
-def get_args_parser():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--config-name", "--cn", required=True)
-    parser.add_argument("--cube-type", "--ct", required=False)
-    parser.add_argument("--pretrain-model", "--pm", required=False)
-    return parser
+
 
 class Workspace:
     def __init__(self, cfg, args):
@@ -211,9 +207,42 @@ class Workspace:
                     print(e)
         pass
 
-    # TODO: trans to onnx model
+    # trans to onnx model
     def to_onnx(self):
-        
+        x = SCRAMBLE_TYPE_TO_STATE_FUNC[self.cube_type]("")
+        x = np.array(x)
+        x = torch.tensor(x, dtype=torch.float32)
+        embed()
+        x = x.unsqueeze_(0) # (batch_idx, state_dim)
+        y = self.network(x) # (batch_idx, 1)
+        logging.info(f"to onnx, input dim:{x.shape}, output dim: {y.shape}")
+        onnx_path = f"{self.exp_dir}/exp_onnx_{len(self.losses)}.onnx"
+        torch.onnx.export(
+            self.network,
+            x,
+            onnx_path,
+            export_params=True,
+            opset_version=11,
+            do_constant_folding=True,
+            input_names=["input"],
+            output_names=["output"],
+            dynamic_axes={
+                "input": {0: "state_num"},
+            }
+        )
+        # onnx load test
+        onnx_model = onnx.load(onnx_path)
+        onnx.checker.check_model(onnx_model)
+
+        ort_session = onnxruntime.InferenceSession(onnx_path)
+        ort_inputs = {ort_session.get_inputs()[0].name: x.numpy()}
+
+        import time
+        beg_time = time.time()
+        for _ in range(10000):
+            ort_outs = ort_session.run(None, ort_inputs)
+        logging.info(f"onnx test infer time: {time.time() - beg_time}")
+        np.testing.assert_allclose(y.detach().numpy(), ort_outs[0], rtol=1e-3, atol=1e-5)
         pass
 
     def save_model(self):
@@ -242,22 +271,5 @@ class Workspace:
             logging.warning(f"invalid model_path: {model_path}, check")
 
     # endregion------------------
-if __name__ == "__main__":    
-    #  using py file as config
-    import config
 
-    parser = get_args_parser()
-    args = parser.parse_args()
-    logging.info(f"args: {args}")
 
-    config_name = args.config_name
-    if not hasattr(config, config_name):
-        logging.error(f"No config name in config.py: {config_name}")
-        exit(-1)
-    cfg = getattr(config, config_name)
-    logging.info(f"cfg: {cfg}")
-
-    workspace  = Workspace(cfg, args)
-    embed() 
-    # workspace.train()
-    # workspace.infer()

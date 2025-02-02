@@ -21,15 +21,15 @@ clock_config = {
     "device": "cpu",
 
     "epoch": 5000,
-    "batch_size": 2,
+    "batch_size": 128,
     "lr": 1e-4,
     "loss": "PairWiseLoss", # or use LogExpLoss
     # "loss": "LogExpLoss",
-    "loss_margin": 1.0,
+    "loss_margin": 10.0,
 
     "input_size": 14,
     "hidden_depth": 3,
-    "hidden_layer_size": 32,
+    "hidden_layer_size": 64,
     
     "plot_window": 100,
 

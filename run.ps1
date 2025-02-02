@@ -1,0 +1,1 @@
+py .\main.py --cn clock_config 
