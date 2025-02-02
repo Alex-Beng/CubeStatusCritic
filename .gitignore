@@ -3,3 +3,4 @@ __pycache__/
 RefCode/
 /training/
 /config.py
+/run.ps1
