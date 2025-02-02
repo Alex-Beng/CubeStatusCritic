@@ -13,7 +13,7 @@ clock_config = {
             "type": "clock"
         }
     ],
-    "check_cube_type": False,
+    "check_cube_type": False, # check cube_type and data files' type
     "cube_type": "clock",
     
     # training relate
