@@ -212,7 +212,7 @@ class Workspace:
         x = SCRAMBLE_TYPE_TO_STATE_FUNC[self.cube_type]("")
         x = np.array(x)
         x = torch.tensor(x, dtype=torch.float32)
-        embed()
+        # embed() # debug
         x = x.unsqueeze_(0) # (batch_idx, state_dim)
         y = self.network(x) # (batch_idx, 1)
         logging.info(f"to onnx, input dim:{x.shape}, output dim: {y.shape}")
