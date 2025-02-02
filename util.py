@@ -98,13 +98,15 @@ def clock_scramble_to_status(scramble_str: str) -> list[int]:
         back_scr = back_scr.strip().split(" ")
     else:
         front_scr = scramble_str.strip().split(" ")
-        back_scr = ""
+        back_scr = []
+    front_scr = [s for s in front_scr if s!=""]
+    back_scr = [s for s in back_scr if s!=""]
     
     def exec_move(status, op, is_back=False):
         mt = re.match(r'^([A-Z]{1,3})(.*)', op)
         if not mt:
-            print(f'error in exec_move with op:{op}')
-            return []
+            print(f'error in exec_move with op:`{op}`')
+            return
         move = mt.group(1)
         step = mt.group(2)
         clk_wise = 1 if step[-1] == '+' else -1
@@ -147,4 +149,6 @@ if __name__ == "__main__":
     status = clock_scramble_to_status("UR3+ DR5+ DL2- UL4- U4- R2+ D4- L4+ ALL2+ ")
     print(status)
     status = clock_scramble_to_status("y2 UR3+ DR5+ DL2- UL4- U4- R2+ D4- L4+ ALL2+ ")
+    print(status)
+    status = clock_scramble_to_status("")
     print(status)
