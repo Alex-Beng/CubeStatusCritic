@@ -1,6 +1,8 @@
 import re
 import json
 
+from IPython import embed
+
 # cstimer output file -> {idx -> scramble status}
 #   scramble status: (scramble, scarmble status, prefer, ...)
 def load_data_from_file(path, session_id, scramble_type, need_preprocess=False) -> list[int, tuple]:
@@ -87,12 +89,16 @@ def clock_scramble_to_status(scramble_str: str) -> list[int]:
     ret_status = [0] * 14
     
     y2_times = scramble_str.count("y2")
-    if y2_times != 1:
+    if y2_times > 1:
         print(f"wrong clock scramble with y2 x {y2_times}")
         return []
-    front_scr, back_scr = scramble_str.split("y2")
-    front_scr = front_scr.strip().split(" ")
-    back_scr = back_scr.strip().split(" ")
+    if y2_times == 1:
+        front_scr, back_scr = scramble_str.split("y2")
+        front_scr = front_scr.strip().split(" ")
+        back_scr = back_scr.strip().split(" ")
+    else:
+        front_scr = scramble_str.strip().split(" ")
+        back_scr = ""
     
     def exec_move(status, op, is_back=False):
         mt = re.match(r'^([A-Z]{1,3})(.*)', op)
@@ -137,4 +143,8 @@ if __name__ == "__main__":
     load_data_from_file("./data/ye_clock_1.json", 1, "clock")
     
     status = clock_scramble_to_status("UR3+ DR5+ DL2- UL4- U4- R2+ D4- L4+ ALL2+ y2 U2- R1- D5- L4+ ALL3+")
+    print(status)
+    status = clock_scramble_to_status("UR3+ DR5+ DL2- UL4- U4- R2+ D4- L4+ ALL2+ ")
+    print(status)
+    status = clock_scramble_to_status("y2 UR3+ DR5+ DL2- UL4- U4- R2+ D4- L4+ ALL2+ ")
     print(status)
