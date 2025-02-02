@@ -30,7 +30,7 @@ class MLP(nn.Module):
         return self.trunk(x)
 
 
-def mlp(input_dim, hidden_dim, output_dim, hidden_depth, output_mod=None, do_regularization=False):
+def mlp(input_dim: int, hidden_dim, output_dim, hidden_depth, output_mod=None, do_regularization=False):
     if hidden_depth == 0:
         mods = [nn.Linear(input_dim, output_dim)]
     else:

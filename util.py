@@ -3,7 +3,7 @@ import json
 
 # cstimer output file -> {idx -> scramble status}
 #   scramble status: (scramble, scarmble status, prefer, ...)
-def load_data_from_file(path, session_id, scramble_type) -> list[int, tuple]:
+def load_data_from_file(path, session_id, scramble_type, need_preprocess=False) -> list[int, tuple]:
     with open(path, 'r') as f:
         raw_data = json.load(f)
     ss_data = raw_data.get(f"session{session_id}", {})
@@ -18,13 +18,20 @@ def load_data_from_file(path, session_id, scramble_type) -> list[int, tuple]:
         else:
             print(f'[warning] not prefer setting in session: {session_id}-{did}')
 
+        status = SCRAMBLE_TYPE_TO_STATE_FUNC[scramble_type](dt[1])
+        if need_preprocess:
+            status = SCRAMBLE_TYPE_TO_PREPROCESS_FUNC[scramble_type](status)
+        # fixed format:
+        # [0]: scramble
+        # [1]: scramble state
+        # [2]: prefer against to last one
         ret_data.append((
             dt[1],
-            SCRAMBLE_TYPE_TO_FUNC[scramble_type](dt[1]),
+            status,
             pf
         ))
-    print(len(ss_data))
-    print(ret_data)
+    # print(len(ss_data))
+    # print(ret_data)
     return ret_data
 
 '''
@@ -38,6 +45,9 @@ def pretty_print_clock(clock_status: list[int]):
     print(f"{s[0]} {s[1]} {s[2]}"+" "*8+f"{s[9]}")
     print(f"{s[3]} {s[4]} {s[5]}"+" y2 "+f"{s[10]} {s[11]} {s[12]}")
     print(f"{s[6]} {s[7]} {s[8]}"+" "*8+f"{s[13]}")
+
+def clock_status_preprocess(clock_status: list[int]):
+    return [s/11. for s in clock_status]
 
 # due to the Rubiks's clock ops satisfy Abelian group
 # let's write it out by hand
@@ -88,7 +98,7 @@ def clock_scramble_to_status(scramble_str: str) -> list[int]:
         mt = re.match(r'^([A-Z]{1,3})(.*)', op)
         if not mt:
             print(f'error in exec_move with op:{op}')
-            return
+            return []
         move = mt.group(1)
         step = mt.group(2)
         clk_wise = 1 if step[-1] == '+' else -1
@@ -110,10 +120,18 @@ def clock_scramble_to_status(scramble_str: str) -> list[int]:
     ret_status = [c%12 for c in ret_status]
     return ret_status
 
-SCRAMBLE_TYPE_TO_FUNC = {
+SCRAMBLE_TYPE_TO_STATE_FUNC = {
     "clock": clock_scramble_to_status,
 }
 
+SCRAMBLE_TYPE_TO_PREPROCESS_FUNC = {
+    "clock": clock_status_preprocess,
+}
+
+def get_parameter_number(model):
+    total_num = sum(p.numel() for p in model.parameters())
+    trainable_num = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    return {'Total': total_num, 'Trainable': trainable_num}
 
 if __name__ == "__main__":
     load_data_from_file("./data/ye_clock_1.json", 1, "clock")
