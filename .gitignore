@@ -4,3 +4,4 @@ RefCode/
 /training/
 /config.py
 /run.ps1
+/infer_test

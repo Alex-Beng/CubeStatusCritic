@@ -17,4 +17,17 @@ data format is like this:
 
 ## How to export time to file
 
+out of ROI
 
+
+## jQuery document ready function
+
+```js
+$(document).ready(function() { ... })
+```
+
+Or for short:
+
+```js
+$(function() { ... });
+```
