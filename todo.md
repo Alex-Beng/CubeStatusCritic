@@ -17,6 +17,10 @@
 # 推理接入
 
 - [x] 导出时魔方种类+打乱 -> 状态，py实现
-- [ ] onnx export
-- [ ] onnx rt + wasm部署cstimer
-  
+- [x] onnx export
+- [x] onnx rt + wasm部署cstimer
+
+# 训练相关
+
+- [ ] 数据增强
+  - [ ] 魔表。交换两面打乱
