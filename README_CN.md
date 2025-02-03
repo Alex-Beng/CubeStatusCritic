@@ -39,4 +39,20 @@ cp config.py.template config.py
 
 ### 4. 训练、导出和部署 ONNX 模型
 
-待完成
+```python
+# main.py
+
+workspace  = train.Workspace(cfg, args)
+embed() 
+# 而不是死板的顺序调用
+# workspace.train()
+# workspace.infer()
+# workspace.to_onnx()
+```
+
+我们通过 `Ipython.embd()` 开启的交互式终端、`WorkSpace` 类实例的reload等技术，极大地便利了交互式训练并导出 `ONNX` 模型的流程。除此之外，可以在运行时更改训练超参数、改变workspace接口的实现等。
+
+
+目前，在自定义的 [cstimer](https://alex-beng.github.io/cstimer/) 中，已经实现了对魔表状态的偏好值推理。在此，特别感谢来自西北工业大学（NWPU）的 ZZY 和 JYH 同学提供了最初的数据。
+
+![clock demo](./pics/3.png)
