@@ -52,6 +52,6 @@ embed()
 By using `Ipython.embed()` to start an interactive terminal and techniques like reloading the `WorkSpace` class instance, we have greatly facilitated the interactive training and exporting of ONNX models. Additionally, it allows for modifying training hyperparameters at runtime, changing the implementation of workspace interfaces, etc.
 
 
-Currently, in our custom [cstimer](https://alex-beng.github.io/cstimer/), we have implemented preference value inference for the magic clock state. Special thanks to ZZY and JYH from Northwestern Polytechnical University (NWPU) for providing the initial data.
+Currently, in our custom [cstimer](https://alex-beng.github.io/cstimer/), we have implemented preference value inference for the Rubik's clock state. Special thanks to ZZY and JYH from Northwestern Polytechnical University (NWPU) for providing the initial data.
 
 ![clock demo](./pics/3.png)
