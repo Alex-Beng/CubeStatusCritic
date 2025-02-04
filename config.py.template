@@ -1,10 +1,14 @@
 clock_config = {
-    # data relate
+    # all the cstimer export files dir, should be in the same dir.
     "data_dir": "./data",
-    "data_files": [ # set it empty for not loading data
+    # export files. set this empty for not loading data 
+    "data_files": [ 
         {
+            # file name
             "name": "ye_clock_1.json",
+            # file session. for two more session, write two config
             "session_id": 1,
+            # the scramble type of the session
             "type": "clock"
         },
         {
@@ -13,25 +17,33 @@ clock_config = {
             "type": "clock"
         }
     ],
-    "check_cube_type": False, # check cube_type and data files' type
+    # check below cube_type vs data files' type
+    "check_cube_type": False, 
+    # need scramble type
     "cube_type": "clock",
     
-    # training relate
+    # training export dir.
     "exp_dir": "./training/clock",
     "device": "cpu",
 
+    # which actually mean iteration times
     "epoch": 5000,
     "batch_size": 128,
     "lr": 1e-4,
-    "loss": "PairWiseLoss", # or use LogExpLoss
-    # "loss": "LogExpLoss",
+    # the used loss, another option is LogExpLoss
+    "loss": "PairWiseLoss", 
+    # the predict value margin
     "loss_margin": 10.0,
 
+    # the cube state's dim, which may be deprecated in the future.
     "input_size": 14,
+    # use MLP as model, set the hidden layer dim and depth
     "hidden_depth": 3,
     "hidden_layer_size": 64,
     
+    # plot the loss per `plot_window`. image will be saved to exp_dir/train_loss.png
     "plot_window": 100,
-
-    # "pretrain_model": "model_5000.bin" # set it to load pre-train model
+    
+    # set it to load pre-train model. will try ./ data_dir/ exp_dir/
+    "pretrain_model": "model_5000.bin" 
 }
