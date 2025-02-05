@@ -128,6 +128,21 @@ def clock_scramble_to_status(scramble_str: str) -> list[int]:
     ret_status = [c%12 for c in ret_status]
     return ret_status
 
+# nnn cube. copied from cstimer, make it into three parts:
+# 1. cubeutil.parseScramble -> parse_nnn_scramble
+# 2. image.nnnImage.doslice -> do_nnn_slice
+# 3. image.nnnImage.getPosit -> nnn_scramble_to_status
+
+def parse_nnn_scramble(scramble_str: str) -> list[int]:
+    pass
+
+def do_nnn_slice(n: int, scramble_str: str) -> list[int]:
+    pass
+
+def nnn_scramble_to_status(n: int, scramble_str: str) -> list[int]:
+    pass
+
+
 SCRAMBLE_TYPE_TO_STATE_FUNC = {
     "clock": clock_scramble_to_status,
 }
