@@ -14,7 +14,7 @@ from torch import optim
 from torch.utils.data import DataLoader
 
 from models import Policy
-from util import SCRAMBLE_TYPE_TO_STATE_FUNC
+from util import SCRAMBLE_TYPE_TO_STATE_FUNC,get_parameter_number
 from dataset import get_dataset
 import loss
 
@@ -171,6 +171,7 @@ class Workspace:
         x = x.to(device)
         y = self.network(x) # (batch_idx, 1)
         logging.info(f"to onnx, input dim:{x.shape}, output dim: {y.shape}")
+        logging.info(f"model param nums: {get_parameter_number(self.network)}")
         onnx_path = f"{self.exp_dir}/exp_onnx_{len(self.losses)}.onnx"
         torch.onnx.export(
             self.network,
