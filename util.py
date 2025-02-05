@@ -3,9 +3,15 @@ import json
 
 from IPython import embed
 
+def get_status_from_scrambles(scramble, scramble_type, need_preprocess=False) -> list:
+    status = SCRAMBLE_TYPE_TO_STATE_FUNC[scramble_type](scramble)
+    if need_preprocess:
+        status = SCRAMBLE_TYPE_TO_PREPROCESS_FUNC[scramble_type](status)
+    return status
+
 # cstimer output file -> {idx -> scramble status}
 #   scramble status: (scramble, scarmble status, prefer, ...)
-def load_data_from_file(path, session_id, scramble_type, need_preprocess=False) -> list[int, tuple]:
+def load_data_from_file(path, session_id, scramble_type, need_preprocess=False) -> list[tuple]:
     with open(path, 'r') as f:
         raw_data = json.load(f)
     ss_data = raw_data.get(f"session{session_id}", {})
@@ -20,9 +26,7 @@ def load_data_from_file(path, session_id, scramble_type, need_preprocess=False) 
         else:
             print(f'[warning] not prefer setting in session: {session_id}-{did}')
 
-        status = SCRAMBLE_TYPE_TO_STATE_FUNC[scramble_type](dt[1])
-        if need_preprocess:
-            status = SCRAMBLE_TYPE_TO_PREPROCESS_FUNC[scramble_type](status)
+        status = get_status_from_scrambles(dt[1], scramble_type, need_preprocess)
         # fixed format:
         # [0]: scramble
         # [1]: scramble state
@@ -50,6 +54,9 @@ def pretty_print_clock(clock_status: list[int]):
 
 def clock_status_preprocess(clock_status: list[int]):
     return [s/11. for s in clock_status]
+
+def nnn_status_preprocess(nnn_status: list[int]):
+    return [s/5. for s in nnn_status]
 
 # due to the Rubiks's clock ops satisfy Abelian group
 # let's write it out by hand
@@ -133,22 +140,143 @@ def clock_scramble_to_status(scramble_str: str) -> list[int]:
 # 2. image.nnnImage.doslice -> do_nnn_slice
 # 3. image.nnnImage.getPosit -> nnn_scramble_to_status
 
-def parse_nnn_scramble(scramble_str: str) -> list[int]:
-    pass
+nnn_scramble_reg = re.compile(r'^([\d]+(?:-\d+)?)?([FRUBLDfrubldzxySME])(?:([w])|&sup([\d]);)?([2\'])?$')
 
-def do_nnn_slice(n: int, scramble_str: str) -> list[int]:
-    pass
+def parse_nnn_scramble(move_map: str, scramble: str="") -> list[list[int]]:
+    moveseq = []
+    moves = scramble.strip().split(' ')
+    
+    for move in moves:
+        m = nnn_scramble_reg.match(move)
+        if m is None:
+            continue
+        
+        f = "FRUBLDfrubldzxySME".find(m.group(2))
+        
+        # 如果是中层转动
+        if f > 14:
+            p = "2'".find(m.group(5) or 'X') + 2
+            f = [0, 4, 5][f % 3]
+            moveseq.append([move_map.index("FRUBLD"[f]), 2, p])
+            moveseq.append([move_map.index("FRUBLD"[f]), 1, 4 - p])
+            continue
+        
+        w = (m.group(1) or '').split('-')
+        w2 = int(w[1]) if len(w) > 1 else -1
+        w = f < 12 and (int(w[0]) if w[0] else int(m.group(4) or 0) or ((m.group(3) == "w" or f > 5) and 2) or 1) or -1
+        p = (f < 12 and 1 or -1) * ("2'".find(m.group(5) or 'X') + 2)
+        # [face, width, clockwise step, idk]
+        # 最后一个参数需要每步是形如 1-3R 这样的转动
+        moveseq.append([move_map.index("FRUBLD"[f % 6]), w, p, w2])
+    
+    return moveseq
 
-def nnn_scramble_to_status(n: int, scramble_str: str) -> list[int]:
-    pass
+
+# f: face, [ D L B U R F ]
+# d: which slice, in [0, size-1)
+# q: [  2 ']
+def do_nnn_slice(size: int, posit: list[int], f, d, q):
+    s2 = size * size
+    if f > 5:
+        f -= 6
+    for k in range(q):
+        for i in range(size):
+            if f == 0:
+                f1 = 6 * s2 - size * d - size + i
+                f2 = 2 * s2 - size * d - 1 - i
+                f3 = 3 * s2 - size * d - 1 - i
+                f4 = 5 * s2 - size * d - size + i
+            elif f == 1:
+                f1 = 3 * s2 + d + size * i
+                f2 = 3 * s2 + d - size * (i + 1)
+                f3 = s2 + d - size * (i + 1)
+                f4 = 5 * s2 + d + size * i
+            elif f == 2:
+                f1 = 3 * s2 + d * size + i
+                f2 = 4 * s2 + size - 1 - d + size * i
+                f3 = d * size + size - 1 - i
+                f4 = 2 * s2 - 1 - d - size * i
+            elif f == 3:
+                f1 = 4 * s2 + d * size + size - 1 - i
+                f2 = 2 * s2 + d * size + i
+                f3 = s2 + d * size + i
+                f4 = 5 * s2 + d * size + size - 1 - i
+            elif f == 4:
+                f1 = 6 * s2 - 1 - d - size * i
+                f2 = size - 1 - d + size * i
+                f3 = 2 * s2 + size - 1 - d + size * i
+                f4 = 4 * s2 - 1 - d - size * i
+            elif f == 5:
+                f1 = 4 * s2 - size - d * size + i
+                f2 = 2 * s2 - size + d - size * i
+                f3 = s2 - 1 - d * size - i
+                f4 = 4 * s2 + d + size * i
+
+            c = posit[f1]
+            posit[f1] = posit[f2]
+            posit[f2] = posit[f3]
+            posit[f3] = posit[f4]
+            posit[f4] = c
+
+        if d == 0:
+            for i in range(size // 2):
+                for j in range((size - 1) // 2):
+                    f1 = f * s2 + i + j * size
+                    f3 = f * s2 + (size - 1 - i) + (size - 1 - j) * size
+                    if f < 3:
+                        f2 = f * s2 + (size - 1 - j) + i * size
+                        f4 = f * s2 + j + (size - 1 - i) * size
+                    else:
+                        f4 = f * s2 + (size - 1 - j) + i * size
+                        f2 = f * s2 + j + (size - 1 - i) * size
+
+                    c = posit[f1]
+                    posit[f1] = posit[f2]
+                    posit[f2] = posit[f3]
+                    posit[f3] = posit[f4]
+                    posit[f4] = c
+
+
+def nnn_scramble_to_status(size: int, scramble: str) -> list[int]:
+    cnt = 0
+    posit = []
+    for i in range(6):
+        for f in range(size * size):
+            posit.append(i)
+            cnt += 1
+
+    # moves = cubeutil.parse_scramble(moveseq, "DLBURF", True)
+    moves = parse_nnn_scramble("DLBURF", scramble)
+    for s in range(len(moves)):
+        for d in range(moves[s][1]):
+            # do_nnn_slice(moves[s][0], d, moves[s][2], size)
+            do_nnn_slice(size, posit, moves[s][0], d, moves[s][2])
+        if moves[s][1] == -1:
+            for d in range(size - 1):
+                do_nnn_slice(size, posit, moves[s][0], d, -moves[s][2])
+            do_nnn_slice(size, posit, (moves[s][0] + 3) % 6, 0, moves[s][2] + 4)
+    
+    return posit
 
 
 SCRAMBLE_TYPE_TO_STATE_FUNC = {
     "clock": clock_scramble_to_status,
+    "222": lambda s: nnn_scramble_to_status(2, s),
+    "333": lambda s: nnn_scramble_to_status(3, s),
+    "444": lambda s: nnn_scramble_to_status(4, s),
+    "555": lambda s: nnn_scramble_to_status(5, s),
+    "666": lambda s: nnn_scramble_to_status(6, s),
+    "777": lambda s: nnn_scramble_to_status(7, s),
 }
 
 SCRAMBLE_TYPE_TO_PREPROCESS_FUNC = {
     "clock": clock_status_preprocess,
+    "222": nnn_status_preprocess,
+    "333": nnn_status_preprocess,
+    "444": nnn_status_preprocess,
+    "555": nnn_status_preprocess,
+    "666": nnn_status_preprocess,
+    "777": nnn_status_preprocess,
 }
 
 def get_parameter_number(model):
@@ -166,4 +294,19 @@ if __name__ == "__main__":
     status = clock_scramble_to_status("y2 UR3+ DR5+ DL2- UL4- U4- R2+ D4- L4+ ALL2+ ")
     print(status)
     status = clock_scramble_to_status("")
+    print(status)
+
+    print("------------nnn-----------")
+    move_seq = parse_nnn_scramble("URFDLB", "U' F L R B D u l 1-3Fw")
+    print(move_seq)
+    
+    # URFDLB
+    status = nnn_scramble_to_status(3, "y3")
+    print(status)
+    status = nnn_scramble_to_status(3, "R")
+    print(status)
+    status = nnn_scramble_to_status(3, "U' F D' R U L' D R F2 U2 R2 D' B2 R2 D F2 L2 B2 L2 D'")
+    print(status)
+
+    status = SCRAMBLE_TYPE_TO_STATE_FUNC["333"]("U' F D' R U L' D R F2 U2 R2 D' B2 R2 D F2 L2 B2 L2 D'")
     print(status)

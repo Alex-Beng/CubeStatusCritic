@@ -46,6 +46,9 @@ class Workspace:
                 )
             # make it infinite
             self.dataloader = itertools.cycle(self.dataloader)
+        x, _ = next(self.dataloader)
+        input_size = x.shape[-1]
+        logging.info(f"use x shape: {x.shape}[-1] -> {input_size} as input size")
 
         # 1.5 output dir
         self.exp_dir = self.get_config("exp_dir")
@@ -62,12 +65,14 @@ class Workspace:
         self.lr = self.get_config("lr")
         
         self.network = Policy(
-            self.get_config("input_size"),
+            input_size,
             1,
             self.get_config("hidden_layer_size"),
             self.get_config("hidden_depth"),
         )
         self.network.to(device)
+        logging.info(f"model params: {get_parameter_number(self.network)}")
+
         self.optimizer = optim.Adam(list(self.network.parameters()), lr=self.lr)
         loss_fn = self.get_config("loss")
         self.loss_margin = self.get_config("loss_margin")
@@ -130,7 +135,7 @@ class Workspace:
                 self.losses.append(epoch_loss.item())
                 if i % self.plot_window == 0:
                     plt.clf(); plt.cla()
-                    plt.yscale('log')
+                    # plt.yscale('log')
                     plt.plot(self.train_steps, self.losses, label="loss", color="blue")
                     plt.legend()
                     plt.savefig(f"{self.exp_dir}/train_loss.png")

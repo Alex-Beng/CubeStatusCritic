@@ -6,7 +6,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-from util import load_data_from_file
+from util import load_data_from_file, get_status_from_scrambles
 
 class BasicDataset(Dataset):
     def __init__(self, workspace: 'Workspace'):
@@ -47,6 +47,20 @@ class BasicDataset(Dataset):
             self.head_scr_idx.add(len(self.scrambles))
             self.scrambles += data
 
+    def init_and_get_sample_idx(self):
+        if not hasattr(self, "sample_idx"):
+            sample_idx = list(range(len(self.scrambles)-1)) # tail is out of scope
+            for idx in self.head_scr_idx:
+                sample_idx.pop(idx)
+            self.sample_idx = sample_idx
+        return self.sample_idx
+
+    def __len__(self):
+        raise Exception("No implement __len__")
+
+    def __getitem__(self, index):
+        raise Exception("No implement __getitem__")
+
 class ClockDataset(BasicDataset):
     def __init__(self, workspace: 'Workspace'):
         super().__init__(workspace)
@@ -82,14 +96,6 @@ class ClockDataset(BasicDataset):
         chosen_state_ts = torch.tensor(chosen_state, dtype=torch.float32)
         reject_state_ts = torch.tensor(reject_state, dtype=torch.float32)
         return chosen_state_ts, reject_state_ts
-
-    def init_and_get_sample_idx(self):
-        if not hasattr(self, "sample_idx"):
-            sample_idx = list(range(len(self.scrambles)-1)) # tail is out of scope
-            for idx in self.head_scr_idx:
-                sample_idx.pop(idx)
-            self.sample_idx = sample_idx
-        return self.sample_idx
         
     def flip_data(self):
         def _flip_state(state):
@@ -108,8 +114,58 @@ class ClockDataset(BasicDataset):
             flipped_scrambles.append(_flip_state(scr))
         self.flip_scrambles = flipped_scrambles
 
+class NNNDataset(BasicDataset):
+    def __init__(self, workspace: 'Workspace'):
+        super().__init__(workspace)
+
+        # due to * 24 may cost too much memory, don't do data aug here
+        self.pre_scrs = workspace.get_config("aug_params").get("pre_scrambles", [""])
+
+    def __len__(self):
+        return len(self.scrambles) * 24
+
+    def __getitem__(self, __idx):
+        idxs = self.init_and_get_sample_idx()
+        # TODO: support weights
+        chosen_pair = random.choice(idxs)
+        chosen_pre_scr = random.choice(self.pre_scrs)
+
+        # chosen idx & chosen idx+1 -> chosen & reject
+        idx = chosen_pair
+        c_s = self.scrambles[idx]
+        r_s = self.scrambles[idx+1]
+        if r_s[2] == True:
+            c_s, r_s = r_s, c_s
+        
+        n_c_s = [
+            c_s[0],
+            # TODO: 接入need_preprocess
+            get_status_from_scrambles(c_s[0], self.workspace.cube_type),
+            c_s[2]
+        ]
+        n_r_s = [
+            r_s[0],
+            # TODO: 接入need_preprocess
+            get_status_from_scrambles(r_s[0], self.workspace.cube_type),
+            r_s[2]
+        ]
+
+        # to tensor
+        chosen_state = np.array([n_c_s[1]])
+        reject_state = np.array([n_r_s[1]])
+        chosen_state_ts = torch.tensor(chosen_state, dtype=torch.float32)
+        reject_state_ts = torch.tensor(reject_state, dtype=torch.float32)
+        return chosen_state_ts, reject_state_ts
+
+
 SCRAMBLE_TYPE_TO_DATASET = {
     "clock": ClockDataset,
+    "222": NNNDataset,
+    "333": NNNDataset,
+    "444": NNNDataset,
+    "555": NNNDataset,
+    "666": NNNDataset,
+    "777": NNNDataset,
 }
 
 def get_dataset(workspace: 'Workspace'):

@@ -1,3 +1,5 @@
+# region clock
+
 clock_config = {
     # all the cstimer export files dir, should be in the same dir.
     "data_dir": "./data",
@@ -41,8 +43,6 @@ clock_config = {
     # the predict value margin
     "loss_margin": 10.0,
 
-    # the cube state's dim, which may be deprecated in the future.
-    "input_size": 14,
     # use MLP as model, set the hidden layer dim and depth
     "hidden_depth": 3,
     "hidden_layer_size": 64,
@@ -53,3 +53,177 @@ clock_config = {
     # set it to load pre-train model. will try ./ data_dir/ exp_dir/
     "pretrain_model": "model_5000.bin" 
 }
+# endregion
+
+# region 222
+_222_config = {
+    # all the cstimer export files dir, should be in the same dir.
+    "data_dir": "./data",
+    # export files. set this empty for not loading data 
+    "data_files": [ 
+        {
+            # file name
+            "name": "peng_222_1.json",
+            # file session. for two more session, write two config
+            "session_id": 1,
+            # the scramble type of the session
+            "type": "222"
+        },
+        {
+            "name": "peng_222_1.json",
+            "session_id": 2,
+            "type": "222"
+        }
+    ],
+    # check below cube_type vs data files' type
+    "check_cube_type": False, 
+    # need scramble type
+    "cube_type": "222",
+    # data augmentation params
+    "aug_params": {
+        "pre_scrambles": [
+            "",
+            "y",
+            "y2",
+            "y3",
+            
+            "z",
+            "z y",
+            "z y2",
+            "z y3",
+            
+            "z2",
+            "z2 y",
+            "z2 y2",
+            "z2 y3",
+            
+            "z3",
+            "z3 y",
+            "z3 y2",
+            "z3 y3",
+
+            "x ",
+            "x y",
+            "x y2",
+            "x y3",
+
+            "x3",
+            "x3 y",
+            "x3 y2",
+            "x3 y3",
+        ]
+    },
+    # dataloader threads
+    "dataloader_workers": 4,
+
+    # training export dir.
+    "exp_dir": "./training/222",
+    "device": "cpu",
+
+    # which actually mean iteration times
+    "epoch": 5000,
+    "batch_size": 128,
+    "lr": 1e-4,
+    # the used loss, another option is LogExpLoss
+    "loss": "PairWiseLoss", 
+    # the predict value margin
+    "loss_margin": 10.0,
+
+    # use MLP as model, set the hidden layer dim and depth
+    "hidden_depth": 3,
+    "hidden_layer_size": 64,
+    
+    # plot the loss per `plot_window`. image will be saved to exp_dir/train_loss.png
+    "plot_window": 100,
+    
+    # set it to load pre-train model. will try ./ data_dir/ exp_dir/
+    "pretrain_model": "model_5000.bin" 
+}
+# endregion
+
+# region 333
+_333_config = {
+    # all the cstimer export files dir, should be in the same dir.
+    "data_dir": "./data",
+    # export files. set this empty for not loading data 
+    "data_files": [ 
+        {
+            # file name
+            "name": "peng_333_1.json",
+            # file session. for two more session, write two config
+            "session_id": 1,
+            # the scramble type of the session
+            "type": "333"
+        },
+        {
+            "name": "peng_333_1.json",
+            "session_id": 2,
+            "type": "333"
+        }
+    ],
+    # check below cube_type vs data files' type
+    "check_cube_type": False, 
+    # need scramble type
+    "cube_type": "333",
+    # data augmentation params
+        "aug_params": {
+        "pre_scrambles": [
+            "",
+            "y",
+            "y2",
+            "y3",
+            
+            "z",
+            "z y",
+            "z y2",
+            "z y3",
+            
+            "z2",
+            "z2 y",
+            "z2 y2",
+            "z2 y3",
+            
+            "z3",
+            "z3 y",
+            "z3 y2",
+            "z3 y3",
+
+            "x ",
+            "x y",
+            "x y2",
+            "x y3",
+
+            "x3",
+            "x3 y",
+            "x3 y2",
+            "x3 y3",
+        ]
+    },
+
+    # dataloader threads
+    "dataloader_workers": 4,
+
+    # training export dir.
+    "exp_dir": "./training/clock",
+    "device": "cpu",
+
+    # which actually mean iteration times
+    "epoch": 5000,
+    "batch_size": 128,
+    "lr": 1e-4,
+    # the used loss, another option is LogExpLoss
+    "loss": "PairWiseLoss", 
+    # the predict value margin
+    "loss_margin": 10.0,
+
+    # use MLP as model, set the hidden layer dim and depth
+    "hidden_depth": 3,
+    "hidden_layer_size": 64,
+    
+    # plot the loss per `plot_window`. image will be saved to exp_dir/train_loss.png
+    "plot_window": 100,
+    
+    # set it to load pre-train model. will try ./ data_dir/ exp_dir/
+    "pretrain_model": "model_5000.bin" 
+}
+# endregion
