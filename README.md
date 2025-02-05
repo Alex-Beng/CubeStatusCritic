@@ -7,7 +7,7 @@ Using IRL(Inverse Reinforcement Learning) to train a reward function for a Rubik
 
 # Usage
 
-## Collect human prefer data throw custom [cstimer](https://alex-beng.github.io/cstimer/)
+## Collect human prefer data through custom [cstimer](https://alex-beng.github.io/cstimer/)
 
 ![set prefer](./pics/1.png)
 
