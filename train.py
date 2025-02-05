@@ -107,6 +107,8 @@ class Workspace:
             for i in tepoch:
                 self.optimizer.zero_grad()
                 chosen_states_ts, reject_states_ts = next(self.dataloader)
+                chosen_states_ts = chosen_states_ts.to(device)
+                reject_states_ts = reject_states_ts.to(device)
                 # infer twice
                 chosen_rewards = self.network(chosen_states_ts)
                 reject_rewards = self.network(reject_states_ts)
