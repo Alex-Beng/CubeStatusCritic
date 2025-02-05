@@ -27,4 +27,4 @@
 - [x] 代码重构，使用data loader
 - [ ] 数据增强
   - [x] 魔表。交换两面打乱
-  - [ ] 正阶魔方。颜色交换
+  - [ ] 正阶魔方。~~颜色交换~~ use pre scramble to do it
