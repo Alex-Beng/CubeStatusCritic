@@ -164,9 +164,11 @@ class Workspace:
     def to_onnx(self):
         x = SCRAMBLE_TYPE_TO_STATE_FUNC[self.cube_type]("")
         x = np.array(x)
-        x = torch.tensor(x, dtype=torch.float32)
+        x = torch.tensor(x, dtype=torch.float32)        
         # embed() # debug
         x = x.unsqueeze_(0) # (batch_idx, state_dim)
+        x_np = x.numpy()
+        x = x.to(device)
         y = self.network(x) # (batch_idx, 1)
         logging.info(f"to onnx, input dim:{x.shape}, output dim: {y.shape}")
         onnx_path = f"{self.exp_dir}/exp_onnx_{len(self.losses)}.onnx"
@@ -188,14 +190,14 @@ class Workspace:
         onnx.checker.check_model(onnx_model)
 
         ort_session = onnxruntime.InferenceSession(onnx_path)
-        ort_inputs = {ort_session.get_inputs()[0].name: x.numpy()}
-
+        ort_inputs = {ort_session.get_inputs()[0].name: x_np}
+        logging.info(f"onnx test input: {ort_inputs}")
         import time
         beg_time = time.time()
         for _ in range(10000):
             ort_outs = ort_session.run(None, ort_inputs)
         logging.info(f"onnx test infer time: {time.time() - beg_time}")
-        np.testing.assert_allclose(y.detach().numpy(), ort_outs[0], rtol=1e-3, atol=1e-5)
+        np.testing.assert_allclose(y.detach().cpu().numpy(), ort_outs[0], rtol=1e-3, atol=1e-5)
         pass
 
     def save_model(self):
