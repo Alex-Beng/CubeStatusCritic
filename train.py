@@ -1,9 +1,8 @@
 import os
-import argparse
 import onnx.checker
 from tqdm import tqdm
 import logging
-import random
+import itertools
 
 import onnx
 import onnxruntime
@@ -12,9 +11,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from torch import optim
+from torch.utils.data import DataLoader
 
 from models import Policy
-from util import load_data_from_file, SCRAMBLE_TYPE_TO_STATE_FUNC
+from util import SCRAMBLE_TYPE_TO_STATE_FUNC
+from dataset import get_dataset
 import loss
 
 def get_config(cfg, args, key):
@@ -32,15 +33,19 @@ class Workspace:
         self.cfg = cfg
         self.args = args
         
-        # 1. load data -> process to list of (scramble etc..)
-        self.check_cube_type = self.get_config("check_cube_type")
-        if self.get_config("cube_type"):
-            self.cube_type = self.get_config("cube_type")
-
-        if self.get_config("data_files"):
-            self.load_data()
-            logging.info(f"loaded data sample: {self.scrambles[:2]}")
-            logging.info(f"loaded data skip idx: {self.head_scr_idx}")
+        # 1. use dataset to init dataloader
+        self.cube_type = self.get_config("cube_type")
+        dataset = get_dataset(self)
+        if not dataset:
+            logging.error(f"There is no dataset for {self.get_config('dataset')}")
+        else:
+            self.dataloader = DataLoader(
+                dataset, shuffle=True, 
+                num_workers=self.get_config("dataloader_workers") , 
+                batch_size=self.get_config("batch_size")
+                )
+            # make it infinite
+            self.dataloader = itertools.cycle(self.dataloader)
 
         # 1.5 output dir
         self.exp_dir = self.get_config("exp_dir")
@@ -89,57 +94,6 @@ class Workspace:
             self.loss_margin_ts = margin_ts
         return self.loss_margin_ts
 
-    def init_and_get_sample_idx(self):
-        if not hasattr(self, "sample_idx"):
-            sample_idx = list(range(len(self.scrambles)-1)) # tail is out of scope
-            for idx in self.head_scr_idx:
-                sample_idx.pop(idx)
-            self.sample_idx = sample_idx
-        return self.sample_idx
-
-    # store the data in the memo
-    def sample_pairs(self, pair_num):
-        idxs = self.init_and_get_sample_idx()
-        # TODO: support weights
-        chosen_pairs = random.choices(idxs, k=pair_num)
-        
-        # chosen idx & chosen idx+1 -> chosen & reject
-        chosen_states = []
-        reject_states = []
-        for idx in chosen_pairs:
-            c_s = self.scrambles[idx]
-            r_s = self.scrambles[idx+1]
-            if r_s[2] == True:
-                c_s, r_s = r_s, c_s
-            chosen_states.append(c_s[1])
-            reject_states.append(r_s[1])
-        return chosen_states, reject_states
-        
-    def load_data(self):
-        data_dir = self.get_config("data_dir")
-        data_files = self.get_config("data_files")
-        
-        self.scrambles = []
-        self.head_scr_idx = set() # exclude the first scramble
-        for file in data_files:
-            file_name = file["name"]
-            file_ssid = file["session_id"]
-            file_type = file["type"]
-
-            if not hasattr(self, "cube_type"):
-                logging.info(f"using first data_file's cube type: {file_type}")
-                self.cube_type = file_type
-            if self.check_cube_type and file_type != self.cube_type:
-                logging.warning(f"file: {file_name}, ssid: {file_ssid} has wrong cube type. Setting `check_cube_type` = False to ignore this check")
-                continue
-            data_path = f"{data_dir}/{file_name}"
-            
-            data = load_data_from_file(data_path, file_ssid, self.cube_type)
-            logging.info(f"read {len(data)} from {data_path} ssid:{file_ssid}")
-            
-            self.head_scr_idx.add(len(self.scrambles))
-            self.scrambles += data
-
     def get_config(self, key):
         return get_config(self.cfg, self.args, key)
 
@@ -152,12 +106,9 @@ class Workspace:
         with tqdm(range(self.epoch)) as tepoch:
             for i in tepoch:
                 self.optimizer.zero_grad()
-                chosen_states, reject_states = self.sample_pairs(self.batch_size)
+                chosen_states_ts, reject_states_ts = next(self.dataloader)
                 # infer twice
-                chosen_states = np.array(chosen_states)
-                chosen_states_ts = torch.tensor(chosen_states, dtype=torch.float32).to(device)
                 chosen_rewards = self.network(chosen_states_ts)
-                reject_states_ts = torch.tensor(reject_states, dtype=torch.float32).to(device)
                 reject_rewards = self.network(reject_states_ts)
                 
                 # clac loss

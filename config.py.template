@@ -21,7 +21,13 @@ clock_config = {
     "check_cube_type": False, 
     # need scramble type
     "cube_type": "clock",
-    
+    # data augmentation params
+    "aug_params": {
+        "flip_prob": 0.5,
+    },
+    # dataloader threads
+    "dataloader_workers": 4,
+
     # training export dir.
     "exp_dir": "./training/clock",
     "device": "cpu",
