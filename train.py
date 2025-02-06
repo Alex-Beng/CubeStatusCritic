@@ -36,6 +36,7 @@ class Workspace:
         # 1. use dataset to init dataloader
         self.cube_type = self.get_config("cube_type")
         dataset = get_dataset(self)
+        # TODO: support no data
         if not dataset:
             logging.error(f"There is no dataset for {self.get_config('dataset')}")
         else:

@@ -20,6 +20,9 @@
 - [x] onnx export
 - [x] onnx rt + wasm部署cstimer
 - [ ] 重构，不使用单独的tool，融合进打乱图案功能
+- [ ] 支持本地上传 onnx 模型
+- [ ] 在线训练？
+
 
 # 训练相关
 
@@ -28,3 +31,4 @@
 - [x] 数据增强
   - [x] 魔表。交换两面打乱
   - [x] 正阶魔方。~~颜色交换~~ use pre scramble to do it
+- [ ] 无data files设置时的支持
