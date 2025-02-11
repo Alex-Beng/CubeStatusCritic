@@ -140,13 +140,13 @@ class NNNDataset(BasicDataset):
         n_c_s = [
             c_s[0],
             # TODO: 接入need_preprocess
-            get_status_from_scrambles(c_s[0], self.workspace.cube_type),
+            get_status_from_scrambles(chosen_pre_scr + c_s[0], self.workspace.cube_type),
             c_s[2]
         ]
         n_r_s = [
             r_s[0],
             # TODO: 接入need_preprocess
-            get_status_from_scrambles(r_s[0], self.workspace.cube_type),
+            get_status_from_scrambles(chosen_pre_scr + r_s[0], self.workspace.cube_type),
             r_s[2]
         ]
 
