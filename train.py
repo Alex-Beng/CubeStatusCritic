@@ -140,7 +140,7 @@ class Workspace:
                     plt.plot(self.train_steps, self.losses, label="loss", color="blue")
                     plt.legend()
                     plt.savefig(f"{self.exp_dir}/train_loss.png")
-                tepoch.set_postfix(loss=epoch_loss.item() / (tepoch.n + 1))
+                tepoch.set_postfix(loss=epoch_loss.item())
         self.save_model()
     
     def infer(self):
